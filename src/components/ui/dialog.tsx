@@ -7,14 +7,15 @@ interface DialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     children: React.ReactNode
+    className?: string
 }
 
-const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+const Dialog = ({ open, onOpenChange, children, className }: DialogProps) => {
     if (!open) return null
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in-0">
-            <div className="relative z-50 w-full max-w-lg rounded-lg bg-background p-6 shadow-lg animate-in zoom-in-95 duration-200">
+            <div className={cn("relative z-50 w-full max-w-lg rounded-lg bg-background p-6 shadow-lg animate-in zoom-in-95 duration-200", className)}>
                 {children}
                 <Button
                     variant="ghost"

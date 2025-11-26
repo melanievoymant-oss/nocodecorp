@@ -49,6 +49,7 @@ export interface Ticket {
     description: string
     type: TicketType
     projectId: string
+    projectName?: string // Fallback if ID lookup fails
     clientId: string
     freelanceId?: string
 
