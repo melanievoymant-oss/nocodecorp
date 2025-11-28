@@ -13,9 +13,10 @@ import {
     Palette,
     Monitor,
     ChevronLeft,
-    CheckCircle2
+    CheckCircle2,
+    AlertTriangle
 } from "lucide-react"
-import type { Project, Ticket, TicketType } from "../types"
+import type { Project, Ticket, TicketType, ClientEmailStatus } from "../types"
 import { calculateDeadline, calculatePriorityLevel, calculatePriorityScore } from "../lib/formulas"
 import { cn } from "../lib/utils"
 
@@ -24,6 +25,7 @@ interface CreateTicketModalProps {
     onOpenChange: (open: boolean) => void
     projects: Project[]
     clientId: string
+    statutEmail: ClientEmailStatus
     onSubmit: (ticket: Ticket) => void
 }
 
@@ -111,7 +113,7 @@ const RatingInput = ({
     )
 }
 
-export function CreateTicketModal({ open, onOpenChange, projects, clientId, onSubmit }: CreateTicketModalProps) {
+export function CreateTicketModal({ open, onOpenChange, projects, clientId, statutEmail, onSubmit }: CreateTicketModalProps) {
     const { register, handleSubmit, reset, watch, setValue, trigger, formState: { errors } } = useForm<FormData>()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [step, setStep] = useState(1)
@@ -429,15 +431,34 @@ export function CreateTicketModal({ open, onOpenChange, projects, clientId, onSu
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                            <div className="h-24 w-24 bg-green-50 rounded-full flex items-center justify-center mb-2 animate-in bounce-in duration-700 delay-200">
-                                <CheckCircle2 className="h-12 w-12 text-green-500" />
-                            </div>
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-bold text-primary">Ticket créé avec succès !</h2>
-                                <p className="text-muted-foreground max-w-xs mx-auto">
-                                    Votre demande a bien été enregistrée. Notre équipe va l'analyser dans les plus brefs délais.
-                                </p>
-                            </div>
+                            {(statutEmail === "Invalid" || statutEmail === "Invalide") ? (
+                                <>
+                                    <div className="h-24 w-24 bg-amber-50 rounded-full flex items-center justify-center mb-2 animate-in bounce-in duration-700 delay-200">
+                                        <AlertTriangle className="h-12 w-12 text-amber-500" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-bold text-amber-600">Ticket en attente</h2>
+                                        <p className="text-muted-foreground max-w-xs mx-auto">
+                                            Votre ticket a été créé mais mis en <strong>Stand-By</strong> car votre email est invalide.
+                                        </p>
+                                        <p className="text-sm text-amber-600/80 bg-amber-50 p-3 rounded-lg">
+                                            Veuillez mettre à jour vos informations via la bannière sur votre tableau de bord pour qu'il soit traité.
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="h-24 w-24 bg-green-50 rounded-full flex items-center justify-center mb-2 animate-in bounce-in duration-700 delay-200">
+                                        <CheckCircle2 className="h-12 w-12 text-green-500" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-bold text-primary">Ticket créé avec succès !</h2>
+                                        <p className="text-muted-foreground max-w-xs mx-auto">
+                                            Votre demande a bien été enregistrée. Notre équipe va l'analyser dans les plus brefs délais.
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                             <Button
                                 type="button"
                                 onClick={handleClose}
@@ -449,6 +470,6 @@ export function CreateTicketModal({ open, onOpenChange, projects, clientId, onSu
                     )}
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

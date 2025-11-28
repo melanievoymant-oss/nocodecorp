@@ -33,7 +33,7 @@ export async function sendTicketToMake(ticket: Ticket) {
     }
 }
 
-export async function fetchFullClientData(email: string) {
+export async function fetchFullClientData(params: { email?: string; clientId?: string }) {
     if (!GET_FULL_DATA_WEBHOOK_URL) {
         console.warn("⚠️ Aucune URL de Webhook de lecture configurée.")
         return null
@@ -45,7 +45,7 @@ export async function fetchFullClientData(email: string) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ ...params, _t: Date.now() }), // Add timestamp to prevent caching
         })
 
         if (!response.ok) {

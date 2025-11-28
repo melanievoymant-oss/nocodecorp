@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { Dashboard } from "./components/Dashboard"
 import { MOCK_CLIENTS, MOCK_PROJECTS, MOCK_TICKETS } from "./lib/mockData"
-import type { Ticket, Project } from "./types"
-import { LogOut, User, Loader2 } from "lucide-react"
-import { Input } from "./components/ui/input"
+import type { Ticket, Project, TicketStatus } from "./types"
+import { LogOut, User } from "lucide-react"
 import { Button } from "./components/ui/button"
 
 import { sendTicketToMake, fetchFullClientData } from "./lib/api"
@@ -16,9 +15,7 @@ function App() {
   // State for authentication
   const [clientId, setClientId] = useState<string | null>(null)
   const [clientData, setClientData] = useState<Client | null>(null)
-  const [inputEmail, setInputEmail] = useState("")
-  const [loginError, setLoginError] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+
 
 
   // Data state
@@ -26,11 +23,11 @@ function App() {
   const [tickets, setTickets] = useState<Ticket[]>(MOCK_TICKETS)
 
   // URL for the Airtable Form to update contact info
-  // URL for the Airtable Form to update contact info
   const UPDATE_INFO_FORM_URL = "https://tally.so/r/VLpLqj"
 
+
   // Helper to process login data
-  const processLoginData = (data: any, email: string) => {
+  const processLoginData = useCallback((data: any, email: string) => {
     // On accepte si 'found' est vrai OU si on a reçu un ID
     // On gère aussi le cas où 'client' est directement à la racine (si l'utilisateur a mal mappé)
     const clientInfo = data.client || (data.id ? data : null)
@@ -98,48 +95,50 @@ function App() {
       return true
     }
     return false
-  }
+  }, [])
 
-  const loginUser = async (email: string) => {
-    setIsLoading(true)
+  const loginUser = useCallback(async (params: { email?: string; clientId?: string }) => {
+    // setIsLoading(true)
     try {
       // 1. Try to fetch from API (Real Data)
-      const data = await fetchFullClientData(email)
+      const data = await fetchFullClientData(params)
       console.log("API Response (Raw):", data)
 
-      if (processLoginData(data, email)) {
-        setIsLoading(false)
+      if (processLoginData(data, params.email || "")) {
+        // setIsLoading(false)
         return
       }
 
       // 2. Fallback to Mock Data (for demo/testing if API fails or returns nothing)
-      const foundMock = MOCK_CLIENTS.find(c => c.email.toLowerCase() === email)
+      const foundMock = MOCK_CLIENTS.find(c =>
+        (params.email && c.email.toLowerCase() === params.email) ||
+        (params.clientId && c.id === params.clientId)
+      )
       if (foundMock) {
         setClientId(foundMock.id)
         // Save session for mock login too
         localStorage.setItem(SESSION_KEY, JSON.stringify({
-          email,
+          email: foundMock.email,
           lastActive: Date.now()
         }))
-        setIsLoading(false)
+        // setIsLoading(false)
         return
       }
 
       // 3. Not found
-      setLoginError(true)
+      // setLoginError(true)
     } catch (error: any) {
       console.error("Login error:", error)
-      setLoginError(true)
+      // setLoginError(true)
     } finally {
-      setIsLoading(false)
+      // setIsLoading(false)
     }
-  }
+  }, [processLoginData])
 
   const handleLogout = useCallback(() => {
     setClientId(null)
     setClientData(null)
-    setInputEmail("")
-    setLoginError(false)
+    setClientData(null)
     localStorage.removeItem(SESSION_KEY)
     // Clear URL params
     window.history.replaceState({}, document.title, window.location.pathname)
@@ -151,7 +150,7 @@ function App() {
     const urlClientId = params.get("clientId")
 
     if (urlClientId) {
-      setClientId(urlClientId)
+      loginUser({ clientId: urlClientId })
     } else {
       // Restore session
       const storedSession = localStorage.getItem(SESSION_KEY)
@@ -161,7 +160,7 @@ function App() {
           if (email && lastActive) {
             // Check inactivity
             if (Date.now() - lastActive < INACTIVITY_TIMEOUT) {
-              loginUser(email)
+              loginUser({ email })
             } else {
               localStorage.removeItem(SESSION_KEY) // Expired
             }
@@ -212,6 +211,22 @@ function App() {
     }
   }, [clientId, handleLogout])
 
+  // Auto-refresh data when window becomes visible (more reliable than focus)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && clientId) {
+        console.log("Tab became visible, refreshing data...")
+        // Small delay to allow Airtable/Make to finish processing
+        setTimeout(() => {
+          loginUser({ clientId })
+        }, 1000)
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange)
+  }, [clientId, loginUser])
+
   // Determine current client (API data > Mock data > Guest fallback)
   const currentClient = clientData ? {
     ...clientData,
@@ -227,8 +242,19 @@ function App() {
   })
 
   const handleTicketCreate = async (newTicket: Ticket) => {
-    // Override clientId with the actual logged-in ID
-    const ticketWithAuth = { ...newTicket, clientId: clientId || "unknown" }
+    // Determine status based on email validity
+    const emailStatus = currentClient.statutEmail ? currentClient.statutEmail.trim().toLowerCase() : ""
+    console.log("Creating ticket. Client Email Status:", currentClient.statutEmail, "Normalized:", emailStatus)
+
+    const isInvalidEmail = emailStatus === "invalid" || emailStatus === "invalide"
+    const status: TicketStatus = isInvalidEmail ? "Stand-By" : "Nouveau"
+
+    // Override clientId with the actual logged-in ID and set correct status
+    const ticketWithAuth = {
+      ...newTicket,
+      clientId: clientId || "unknown",
+      statut: status
+    }
 
     // 1. Update local UI immediately (Optimistic UI)
     setTickets(prev => [ticketWithAuth, ...prev])
@@ -236,74 +262,35 @@ function App() {
     // 2. Send to Make
     try {
       await sendTicketToMake(ticketWithAuth)
+
+      // 3. Refresh data to ensure backend sync (with a small delay for Make to process)
+      setTimeout(() => {
+        if (clientId) loginUser({ clientId })
+      }, 1000)
+
     } catch (error) {
       console.error("Failed to sync with Make")
     }
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginError(false)
-    const email = inputEmail.trim().toLowerCase()
-    await loginUser(email)
-  }
+
 
   // Login Screen
   if (!clientId) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
-
-
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md space-y-6">
-            <div className="text-center space-y-6">
-              <div className="flex items-center justify-center mb-6">
-                <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="NoCodeCorp Logo" className="h-24 w-24 rounded-xl object-cover shadow-md" />
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight">Bienvenue</h1>
-              <p className="text-muted-foreground">Entrez votre email pour accéder à votre espace.</p>
+          <div className="w-full max-w-md space-y-6 text-center">
+            <div className="flex items-center justify-center mb-6">
+              <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="NoCodeCorp Logo" className="h-24 w-24 rounded-xl object-cover shadow-md" />
             </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Input
-                  type="email"
-                  placeholder="nom@entreprise.com"
-                  value={inputEmail}
-                  onChange={(e) => {
-                    setInputEmail(e.target.value)
-                    setLoginError(false)
-                  }}
-                  className={loginError ? "border-destructive" : ""}
-                />
-                {loginError && (
-                  <div className="space-y-4">
-                    <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm font-medium">
-                      Email non reconnu.
-                    </div>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() => window.open(UPDATE_INFO_FORM_URL, '_blank')}
-                    >
-                      Mettre à jour mes infos
-                    </Button>
-
-                  </div>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connexion...
-                  </>
-                ) : (
-                  "Se connecter"
-                )}
-              </Button>
-            </form>
+            <h1 className="text-2xl font-semibold tracking-tight">Accès Restreint</h1>
+            <p className="text-muted-foreground">
+              Pour accéder à votre espace client, veuillez utiliser le <strong>lien personnel</strong> qui vous a été envoyé par email.
+            </p>
+            <div className="p-4 bg-amber-50 text-amber-800 rounded-lg text-sm">
+              Si vous avez perdu votre lien, contactez-nous directement.
+            </div>
           </div>
         </main>
       </div>
@@ -339,10 +326,54 @@ function App() {
 
       {/* Main Content */}
       <main>
+        {(() => {
+          const emailStatus = currentClient.statutEmail ? currentClient.statutEmail.trim().toLowerCase() : ""
+          const isInvalid = emailStatus === "invalid" || emailStatus === "invalide"
+
+          if (isInvalid) {
+            return (
+              <div className="bg-destructive/10 border-l-4 border-destructive p-4 mb-6 mx-6 mt-6 rounded-r shadow-sm animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-full shadow-sm">
+                      <LogOut className="h-5 w-5 text-destructive rotate-180" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-destructive">Action requise : Email Invalide</h3>
+                      <p className="text-sm text-destructive/80">
+                        Nous n'arrivons plus à vous contacter. Vos tickets sont mis en attente.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loginUser({ clientId: clientId || "" })}
+                      className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                    >
+                      Rafraîchir
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => window.open(`${UPDATE_INFO_FORM_URL}?record_id=${clientId}`, '_blank')}
+                      className="shadow-md hover:scale-105 transition-transform"
+                    >
+                      Mettre à jour mes infos
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+          return null
+        })()}
         <Dashboard
           projects={projects}
           tickets={tickets}
           clientId={currentClient.id}
+          statutEmail={currentClient.statutEmail}
           onTicketCreate={handleTicketCreate}
         />
       </main>

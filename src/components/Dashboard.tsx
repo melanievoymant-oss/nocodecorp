@@ -1,28 +1,33 @@
 import { useState } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Plus, Search, AlertCircle, Clock } from "lucide-react"
+import { Plus, Search, AlertCircle, Clock, Lock } from "lucide-react"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Input } from "./ui/input"
 import { CreateTicketModal } from "./CreateTicketModal"
-import type { Project, Ticket, TicketStatus, ProjectStatus } from "../types"
+import type { Project, Ticket, TicketStatus, ProjectStatus, ClientEmailStatus } from "../types"
 import { getDaysRemaining, isTicketLate } from "../lib/formulas"
 
 interface DashboardProps {
     projects: Project[]
     tickets: Ticket[]
     clientId: string
+    statutEmail: ClientEmailStatus
     onTicketCreate: (ticket: Ticket) => void
 }
 
-export function Dashboard({ projects, tickets, clientId, onTicketCreate }: DashboardProps) {
+import { cn } from "../lib/utils"
+
+export function Dashboard({ projects, tickets, clientId, statutEmail, onTicketCreate }: DashboardProps) {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [projectSearchTerm, setProjectSearchTerm] = useState("")
     const [projectFilter, setProjectFilter] = useState<"active" | "all">("active")
     const [ticketFilter, setTicketFilter] = useState<"active" | "all">("active")
+
+    const hasStandByTicket = tickets.some(t => t.statut === "Stand-By")
 
     const filteredProjects = projects.filter(p => {
         const matchesSearch = p.nom.toLowerCase().includes(projectSearchTerm.toLowerCase()) ||
@@ -81,10 +86,24 @@ export function Dashboard({ projects, tickets, clientId, onTicketCreate }: Dashb
                     <p className="text-muted-foreground">Bienvenue sur votre espace client NoCodeCorp.</p>
                 </div>
                 <Button
-                    onClick={() => setIsModalOpen(true)}
-                    className="w-full md:w-auto bg-secondary hover:bg-secondary/90 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+                    onClick={() => !hasStandByTicket && setIsModalOpen(true)}
+                    disabled={hasStandByTicket}
+                    className={cn(
+                        "w-full md:w-auto shadow-lg transition-all duration-300 group",
+                        hasStandByTicket
+                            ? "bg-gray-300 cursor-not-allowed text-gray-500 hover:bg-gray-300"
+                            : "bg-secondary hover:bg-secondary/90 text-white hover:shadow-xl hover:scale-105"
+                    )}
                 >
-                    <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform duration-300" /> Nouveau Ticket
+                    {hasStandByTicket ? (
+                        <>
+                            <Lock className="mr-2 h-4 w-4" /> Création bloquée (Ticket en attente)
+                        </>
+                    ) : (
+                        <>
+                            <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform duration-300" /> Nouveau Ticket
+                        </>
+                    )}
                 </Button>
             </div>
 
@@ -276,6 +295,7 @@ export function Dashboard({ projects, tickets, clientId, onTicketCreate }: Dashb
                 onOpenChange={setIsModalOpen}
                 projects={projects}
                 clientId={clientId}
+                statutEmail={statutEmail}
                 onSubmit={onTicketCreate}
             />
         </div>

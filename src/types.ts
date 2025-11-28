@@ -2,7 +2,7 @@ export type PriorityLevel = "Faible" | "Moyenne" | "Forte"
 export type TicketStatus = "Nouveau" | "Stand-By" | "A traiter" | "En cours" | "Hors délai" | "Traité"
 export type TicketType = "Bug" | "Nouvelle fonctionnalité" | "Support" | "Design" | "Développement"
 export type ProjectStatus = "En cours" | "Terminé" | "En pause"
-export type ClientEmailStatus = "Valid" | "Invalid" | "En attente de mise à jour"
+export type ClientEmailStatus = "Valid" | "Invalid" | "Invalide" | "En attente de mise à jour"
 
 export interface Client {
     id: string
