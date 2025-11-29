@@ -22,7 +22,10 @@ export const calculateDeadline = (createdAt: Date, priority: PriorityLevel): Dat
 }
 
 export const isTicketLate = (ticket: Ticket): boolean => {
-    // IF(AND(OR(Statut = "En cours", Statut = "A traiter", Statut = "Nouveau"), TODAY() > Deadline), "OUI", "NON")
+    // If status is explicitly "Hors délai", it is late.
+    if (ticket.statut === "Hors délai") return true
+
+    // Otherwise check date for active tickets
     const activeStatuses = ["En cours", "A traiter", "Nouveau"]
     if (!activeStatuses.includes(ticket.statut)) return false
 

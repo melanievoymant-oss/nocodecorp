@@ -15,8 +15,7 @@ function App() {
   // State for authentication
   const [clientId, setClientId] = useState<string | null>(null)
   const [clientData, setClientData] = useState<Client | null>(null)
-
-
+  const [isLoading, setIsLoading] = useState(true)
 
   // Data state
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS)
@@ -98,14 +97,12 @@ function App() {
   }, [])
 
   const loginUser = useCallback(async (params: { email?: string; clientId?: string }) => {
-    // setIsLoading(true)
     try {
       // 1. Try to fetch from API (Real Data)
       const data = await fetchFullClientData(params)
       console.log("API Response (Raw):", data)
 
       if (processLoginData(data, params.email || "")) {
-        // setIsLoading(false)
         return
       }
 
@@ -121,17 +118,14 @@ function App() {
           email: foundMock.email,
           lastActive: Date.now()
         }))
-        // setIsLoading(false)
         return
       }
 
       // 3. Not found
-      // setLoginError(true)
     } catch (error: any) {
       console.error("Login error:", error)
-      // setLoginError(true)
     } finally {
-      // setIsLoading(false)
+      setIsLoading(false)
     }
   }, [processLoginData])
 
@@ -146,30 +140,40 @@ function App() {
 
   // Check URL for clientId on mount or restore session
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const urlClientId = params.get("clientId")
+    const initSession = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const urlClientId = params.get("clientId")
 
-    if (urlClientId) {
-      loginUser({ clientId: urlClientId })
-    } else {
-      // Restore session
-      const storedSession = localStorage.getItem(SESSION_KEY)
-      if (storedSession) {
-        try {
-          const { email, lastActive } = JSON.parse(storedSession)
-          if (email && lastActive) {
-            // Check inactivity
-            if (Date.now() - lastActive < INACTIVITY_TIMEOUT) {
-              loginUser({ email })
-            } else {
-              localStorage.removeItem(SESSION_KEY) // Expired
+      if (urlClientId) {
+        await loginUser({ clientId: urlClientId })
+      } else {
+        // Restore session
+        const storedSession = localStorage.getItem(SESSION_KEY)
+        let sessionRestored = false
+        if (storedSession) {
+          try {
+            const { email, lastActive } = JSON.parse(storedSession)
+            if (email && lastActive) {
+              // Check inactivity
+              if (Date.now() - lastActive < INACTIVITY_TIMEOUT) {
+                await loginUser({ email })
+                sessionRestored = true
+              } else {
+                localStorage.removeItem(SESSION_KEY) // Expired
+              }
             }
+          } catch (e) {
+            localStorage.removeItem(SESSION_KEY)
           }
-        } catch (e) {
-          localStorage.removeItem(SESSION_KEY)
+        }
+
+        if (!sessionRestored) {
+          setIsLoading(false)
         }
       }
     }
+
+    initSession()
   }, [])
 
   // Inactivity Timer
@@ -273,7 +277,14 @@ function App() {
     }
   }
 
-
+  // Loading Screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   // Login Screen
   if (!clientId) {
@@ -304,7 +315,7 @@ function App() {
         <div className="container flex h-16 items-center justify-between py-4 px-6 mx-auto">
           <div className="flex items-center gap-3 font-bold text-xl text-primary">
             <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="NoCodeCorp Logo" className="h-10 w-10 rounded-lg object-cover" />
-            <span>NoCodeCorp</span>
+            <span>NoCodeCorp <span className="text-xs font-normal text-muted-foreground">v2.0</span></span>
           </div>
 
           <div className="flex items-center gap-4">
