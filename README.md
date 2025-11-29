@@ -89,7 +89,6 @@ Le système repose sur 5 scénarios Make.com clés qui orchestrent toute la logi
 **Déclencheur** : Webhook (Appel depuis le frontend avec `clientId`).
 **Action** : Récupère les infos du client, ses projets et ses tickets depuis Airtable.
 **Sortie** : Renvoie un JSON complet au frontend.
-![Scénario 1 - Connexion](./docs/images/make_scenario_1_login.png)
 
 ### 2. Création du ticket
 **Déclencheur** : Webhook (Soumission du formulaire).
@@ -97,7 +96,6 @@ Le système repose sur 5 scénarios Make.com clés qui orchestrent toute la logi
 *   Vérifie l'email du client.
 *   Crée le ticket dans Airtable.
 *   Envoie une notification de confirmation au client.
-![Scénario 2 - Création](./docs/images/make_scenario_2_creation.png)
 
 ### 3. Vérification et attribution
 **Déclencheur** : Création d'un ticket (via Router du scénario 2).
@@ -105,12 +103,10 @@ Le système repose sur 5 scénarios Make.com clés qui orchestrent toute la logi
 *   Analyse le type de ticket (Dev, Design...).
 *   Cherche un freelance disponible et compétent.
 *   Assigne le ticket automatiquement (Load Balancing).
-![Scénario 3 - Attribution](./docs/images/make_scenario_3_verification.png)
 
 ### 4. Ticket traité
 **Déclencheur** : Airtable (Changement de statut à "Traité").
 **Action** : Envoie un email automatique au client pour le prévenir que sa demande est terminée.
-![Scénario 4 - Traité](./docs/images/make_scenario_4_traite.png)
 
 ### 5. Deadline dépassée
 **Déclencheur** : Planifié (Tous les jours).
@@ -118,7 +114,6 @@ Le système repose sur 5 scénarios Make.com clés qui orchestrent toute la logi
 *   Scanne les tickets non traités dont la date est passée.
 *   Passe le statut à "Hors délai".
 *   Notifie le client (excuses) et l'équipe (urgence).
-![Scénario 5 - Deadline](./docs/images/make_scenario_5_deadline.png)
 
 ## 🔗 Intégrations Backend
 
