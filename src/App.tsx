@@ -76,7 +76,7 @@ function App() {
         ...t,
         priorityLevel: t.priorityLevel || "Moyenne",
         priorityScore: t.priorityScore || 0,
-        statut: t.statut || "Nouveau",
+        statut: (t.statut || "Nouveau").trim(),
         deadline: normalizeDate(t.deadline),
         projectId: normalizeId(t.projectId),
         projectName: t.projectName || "" // Capture project name if provided
@@ -315,7 +315,7 @@ function App() {
         <div className="container flex h-16 items-center justify-between py-4 px-6 mx-auto">
           <div className="flex items-center gap-3 font-bold text-xl text-primary">
             <img src={`${import.meta.env.BASE_URL}logo.jpg`} alt="NoCodeCorp Logo" className="h-10 w-10 rounded-lg object-cover" />
-            <span>NoCodeCorp <span className="text-xs font-normal text-muted-foreground">v2.0</span></span>
+            <span>NoCodeCorp <span className="text-xs font-normal text-muted-foreground">v2.2</span></span>
           </div>
 
           <div className="flex items-center gap-4">

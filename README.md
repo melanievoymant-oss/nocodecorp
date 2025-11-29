@@ -1,73 +1,135 @@
-# React + TypeScript + Vite
+# NoCodeCorp - Espace Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bienvenue sur le dépôt du **Tableau de Bord Client NoCodeCorp**.
+Cette application permet aux clients de suivre leurs projets, de gérer leurs tickets de support/demande, et d'interagir avec l'équipe NoCodeCorp.
 
-Currently, two official plugins are available:
+## 🌟 Fonctionnalités
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🔐 Authentification & Session
+*   **Connexion par Lien Magique** : Les clients se connectent via un lien unique contenant leur `clientId`.
+*   **Persistance de Session** : La session est maintenue active même après rafraîchissement (stockage local sécurisé).
+*   **Déconnexion Automatique** : Sécurité accrue avec une déconnexion automatique après 30 minutes d'inactivité.
+*   **Protection** : Redirection automatique vers la page "Accès Restreint" si aucun client n'est identifié.
 
-## React Compiler
+### 📊 Tableau de Bord
+*   **Vue d'ensemble** : Liste des projets en cours et terminés.
+*   **Tickets Récents** : Tableau triable et filtrable des derniers tickets.
+*   **Indicateurs Visuels** :
+    *   Badges de statut colorés (Nouveau, En cours, Traité, etc.).
+    *   Indicateur de priorité (Faible, Moyenne, Forte).
+    *   **Alerte Retard** : Badge "OUI" rouge clignotant pour les tickets hors délai.
+*   **Recherche** : Filtrage dynamique des projets et tickets par mot-clé.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🎫 Gestion des Tickets
+*   **Création de Ticket** : Formulaire multi-étapes intuitif (inspiré de Fillout).
+*   **Calcul de Priorité** : Algorithme intelligent qui suggère une priorité basée sur 4 questions clés (Impact, Utilisateurs, Blocage, Délai).
+*   **Validation** : Vérification des champs obligatoires avant soumission.
+*   **Feedback** : Messages de succès ou d'erreur clairs.
 
-## Expanding the ESLint configuration
+### 🔄 Mises à jour & Intégrations
+*   **Auto-Refresh** : Les données se rafraîchissent automatiquement lorsque l'onglet redevient actif (ex: après une mise à jour d'email).
+*   **Bannière Email Invalide** : Avertissement bloquant si l'email du client est invalide, avec lien vers un formulaire de mise à jour (Tally).
+*   **Mode Stand-By** : Blocage de la création de tickets si le client est en statut "Stand-By".
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Stack Technique
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+*   **Framework** : [React](https://react.dev/) (v18+)
+*   **Langage** : [TypeScript](https://www.typescriptlang.org/)
+*   **Build Tool** : [Vite](https://vitejs.dev/)
+*   **Styling** : [Tailwind CSS](https://tailwindcss.com/)
+*   **Icônes** : [Lucide React](https://lucide.dev/)
+*   **Dates** : [date-fns](https://date-fns.org/)
+*   **Formulaires** : [React Hook Form](https://react-hook-form.com/)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📂 Structure du Projet
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/         # Composants React réutilisables
+│   ├── ui/             # Composants d'interface de base (Boutons, Cards, Inputs...)
+│   ├── Dashboard.tsx   # Vue principale
+│   └── CreateTicketModal.tsx # Formulaire de création
+├── lib/
+│   ├── api.ts          # Fonctions d'appel API (Make.com)
+│   ├── formulas.ts     # Logique métier (Calcul priorité, Retard...)
+│   ├── mockData.ts     # Données de test (pour le dév local)
+│   └── utils.ts        # Utilitaires (classes CSS...)
+├── types.ts            # Définitions TypeScript (Interfaces Client, Ticket, Projet...)
+└── App.tsx             # Point d'entrée & Gestion de l'authentification
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Accès & Déploiement
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 🌍 Accès Client (En ligne)
+L'application est hébergée sur GitHub Pages.
+Pour y accéder, utilisez votre lien personnel (envoyé par email) ou le format suivant :
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**`https://melanievoymant-oss.github.io/nocodecorp/?clientId=recXXXXXXXXXXXXXX`**
+
+*(Remplacez `recXXXXXXXXXXXXXX` par l'ID Airtable du client)*
+
+### 🛠️ Maintenance (Pour les développeurs)
+
+**Installation des dépendances :**
+```bash
+npm install
 ```
+
+**Mise en ligne (Déploiement) :**
+```bash
+npm run deploy
+```
+*Cette commande construit le projet et met à jour le site en ligne.*
+
+## 🤖 Automatisations (Make.com)
+
+Le système repose sur 5 scénarios Make.com clés qui orchestrent toute la logique métier.
+
+### 1. Récupération des données (Connexion)
+**Déclencheur** : Webhook (Appel depuis le frontend avec `clientId`).
+**Action** : Récupère les infos du client, ses projets et ses tickets depuis Airtable.
+**Sortie** : Renvoie un JSON complet au frontend.
+![Scénario 1 - Connexion](./docs/images/make_scenario_1_login.png)
+
+### 2. Création du ticket
+**Déclencheur** : Webhook (Soumission du formulaire).
+**Action** :
+*   Vérifie l'email du client.
+*   Crée le ticket dans Airtable.
+*   Envoie une notification de confirmation au client.
+![Scénario 2 - Création](./docs/images/make_scenario_2_creation.png)
+
+### 3. Vérification et attribution
+**Déclencheur** : Création d'un ticket (via Router du scénario 2).
+**Action** :
+*   Analyse le type de ticket (Dev, Design...).
+*   Cherche un freelance disponible et compétent.
+*   Assigne le ticket automatiquement (Load Balancing).
+![Scénario 3 - Attribution](./docs/images/make_scenario_3_verification.png)
+
+### 4. Ticket traité
+**Déclencheur** : Airtable (Changement de statut à "Traité").
+**Action** : Envoie un email automatique au client pour le prévenir que sa demande est terminée.
+![Scénario 4 - Traité](./docs/images/make_scenario_4_traite.png)
+
+### 5. Deadline dépassée
+**Déclencheur** : Planifié (Tous les jours).
+**Action** :
+*   Scanne les tickets non traités dont la date est passée.
+*   Passe le statut à "Hors délai".
+*   Notifie le client (excuses) et l'équipe (urgence).
+![Scénario 5 - Deadline](./docs/images/make_scenario_5_deadline.png)
+
+## 🔗 Intégrations Backend
+
+Ce frontend est connecté à un backend No-Code via **Make.com** et **Airtable**.
+
+*   **Base de données** : Airtable (Clients, Projets, Tickets, Freelances).
+*   **Logique métier** : Scénarios Make.com (Réception des tickets, Notifications, Assignation auto).
+*   **Formulaires externes** : Tally.so (Mise à jour profil client).
+
+📄 **Pour plus de détails sur la configuration Backend, consultez le guide d'intégration :**
+👉 [Guide d'Intégration (Make & Airtable)](./integration_guide.md)
+
+---
+*Développé pour NoCodeCorp.*
